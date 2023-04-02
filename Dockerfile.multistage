@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+
+## Build
+FROM golang:1.16-buster AS build
+
+WORKDIR /app
+
+COPY . .
+
+RUN go mod download
+RUN go build ./cmd/banm-google-sheets-observer
+
+## Deploy
+FROM gcr.io/distroless/base-debian10
+
+WORKDIR /
+
+COPY --from=build /app/banm-google-sheets-observer /banm-google-sheets-observer
+COPY .env /
+
+EXPOSE 3000
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/banm-google-sheets-observer"]
