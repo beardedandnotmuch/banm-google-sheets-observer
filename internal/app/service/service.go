@@ -31,14 +31,16 @@ func (s *Service) GetSheetsData(sId string, rng string) []string {
 		sId = os.Getenv("GOOGLE_SHEET_ID")
 	}
 
+	s.cache.SetPollingKey(sId + rng + "polling")
+
 	cache := s.cache.Get(sId + rng)
 
 	if cache != nil {
-		fmt.Println("Return cached data")
+		fmt.Printf("\nGetting cache: | s_id: %s | range: %s |\n", sId, rng)
 		return cache
 	}
 
-	fmt.Println("Sending request...")
+	fmt.Printf("\nSending request: | s_id: %s | range: %s |\n", sId, rng)
 
 	response, err := sendGoogleSheetsRequest(sId, rng)
 
@@ -46,13 +48,13 @@ func (s *Service) GetSheetsData(sId string, rng string) []string {
 		log.Fatal(err)
 	}
 
+	fmt.Println("Status code: 200 Ok")
+
 	r := parseResponse(response)
 
 	s.cache.Set(sId+rng, r)
 
 	go startPolling(s, sId, rng)
-
-	fmt.Println(r)
 
 	return r
 }
@@ -119,13 +121,9 @@ func parseResponse(r []sheets.RowData) []string {
 }
 
 func startPolling(s *Service, sId string, rng string) {
-	time.Sleep(10 * time.Second)
-
-	s.cache.SetPollingKey(sId + rng + "polling")
-
 	for _ = range time.Tick(time.Second * 10) {
 		if s.cache.Get(sId+rng+"polling") != nil {
-			fmt.Println("Polling")
+			fmt.Printf("Polling: | s_id: %s | range: %s | ttl: %s |\n", sId, rng, s.cache.Ttl(sId+rng+"polling"))
 
 			d, err := sendGoogleSheetsRequest(sId, rng)
 
@@ -135,7 +133,7 @@ func startPolling(s *Service, sId string, rng string) {
 
 			s.cache.Set(sId+rng, parseResponse(d))
 		} else {
-			fmt.Println("Polling finished")
+			fmt.Printf("Polling finished: | s_id: %s | range: %s |\n", sId, rng)
 
 			return
 		}

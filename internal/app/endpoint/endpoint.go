@@ -16,13 +16,14 @@ type Endpoint struct {
 }
 
 func New(s Service) *Endpoint {
+	s.InitCache()
+
 	return &Endpoint{
 		s: s,
 	}
 }
 
 func (e *Endpoint) HandleClientRequest(w http.ResponseWriter, r *http.Request) {
-	e.s.InitCache()
 	p, err := json.Marshal(e.s.GetSheetsData(r.URL.Query().Get("s_id"), r.URL.Query().Get("range")))
 
 	if err != nil {

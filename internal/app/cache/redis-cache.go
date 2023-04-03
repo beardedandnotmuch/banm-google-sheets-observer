@@ -30,7 +30,7 @@ func NewRedisCache(host string, db int, expires time.Duration) GoogleSheetsCache
 	return &RedisCache{
 		host:    host,
 		db:      db,
-		expires: expires * time.Minute,
+		expires: 0,
 		client:  client,
 	}
 }
@@ -48,7 +48,7 @@ func ping(client *redis.Client) error {
 func (c *RedisCache) Set(key string, value []string) {
 	hash := md5.Sum([]byte(key))
 
-	c.client.Set(hex.EncodeToString(hash[:]), strings.Join(value, ","), c.expires)
+	c.client.Set(hex.EncodeToString(hash[:]), strings.Join(value, ","), time.Minute)
 }
 
 func (c *RedisCache) Get(key string) []string {
@@ -67,5 +67,11 @@ func (c *RedisCache) Get(key string) []string {
 func (c *RedisCache) SetPollingKey(key string) {
 	hash := md5.Sum([]byte(key))
 
-	c.client.Set(hex.EncodeToString(hash[:]), fmt.Sprintln(time.Now()), time.Minute*1)
+	c.client.Set(hex.EncodeToString(hash[:]), fmt.Sprintln(time.Now()), time.Minute)
+}
+
+func (c *RedisCache) Ttl(key string) time.Duration {
+	hash := md5.Sum([]byte(key))
+
+	return c.client.TTL(hex.EncodeToString(hash[:])).Val()
 }
