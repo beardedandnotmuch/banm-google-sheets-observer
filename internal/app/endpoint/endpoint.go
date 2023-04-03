@@ -8,6 +8,7 @@ import (
 
 type Service interface {
 	GetSheetsData(sId string, rng string) []string
+	InitCache()
 }
 
 type Endpoint struct {
@@ -21,6 +22,7 @@ func New(s Service) *Endpoint {
 }
 
 func (e *Endpoint) HandleClientRequest(w http.ResponseWriter, r *http.Request) {
+	e.s.InitCache()
 	p, err := json.Marshal(e.s.GetSheetsData(r.URL.Query().Get("s_id"), r.URL.Query().Get("range")))
 
 	if err != nil {

@@ -31,6 +31,14 @@ func (s *Service) GetSheetsData(sId string, rng string) []string {
 	}
 
 	//TODO: checking data in cache getFromCache(sId)
+	cache := s.cache.Get(sId + rng)
+
+	if cache != nil {
+		fmt.Println("Return cached data")
+		return cache
+	}
+
+	fmt.Println("Sending request...")
 
 	response, err := sendGoogleSheetsRequest(sId, rng)
 
@@ -38,11 +46,15 @@ func (s *Service) GetSheetsData(sId string, rng string) []string {
 		log.Fatal(err)
 	}
 
-	return parseResponse(response)
+	r := parseResponse(response)
+
+	s.cache.Set(sId+rng, r)
+
+	return r
 }
 
 func (s *Service) InitCache() {
-
+	s.cache = cache.NewRedisCache("redis-google-sheets-db:"+os.Getenv("REDIS_PORT"), 0, 1)
 }
 
 func sendGoogleSheetsRequest(sId string, rng string) ([]sheets.RowData, error) {
@@ -100,12 +112,6 @@ func parseResponse(r []sheets.RowData) []string {
 	}
 
 	return result
-}
-
-func getFromCache(sId string) (string, error) {
-	var data string
-
-	return data, nil
 }
 
 func startPolling(intervalInSec int) {

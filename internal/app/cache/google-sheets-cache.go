@@ -1,6 +1,6 @@
 package cache
 
 type GoogleSheetsCache interface {
-	Set(key string, value string)
-	Get(key string) string
+	Set(key string, value []string)
+	Get(key string) []string
 }

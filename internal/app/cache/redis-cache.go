@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -44,21 +45,21 @@ func ping(client *redis.Client) error {
 	return nil
 }
 
-func (c *RedisCache) Set(key string, value string) {
+func (c *RedisCache) Set(key string, value []string) {
 	hash := md5.Sum([]byte(key))
 
-	c.client.Set(hex.EncodeToString(hash[:]), value, c.expires*time.Second)
+	c.client.Set(hex.EncodeToString(hash[:]), strings.Join(value, ","), c.expires)
 }
 
-func (c *RedisCache) Get(key string) string {
+func (c *RedisCache) Get(key string) []string {
 	hash := md5.Sum([]byte(key))
 
 	val, err := c.client.Get(hex.EncodeToString(hash[:])).Result()
 	if err == redis.Nil {
-		return ""
+		return nil
 	} else if err != nil {
 		panic(err)
 	}
 
-	return val
+	return strings.Split(val, ",")
 }
