@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/beardedandnotmuch/google-sheets-observer/internal/app/cache"
 	"github.com/beardedandnotmuch/google-sheets-observer/internal/app/models/sheets"
@@ -30,7 +31,6 @@ func (s *Service) GetSheetsData(sId string, rng string) []string {
 		sId = os.Getenv("GOOGLE_SHEET_ID")
 	}
 
-	//TODO: checking data in cache getFromCache(sId)
 	cache := s.cache.Get(sId + rng)
 
 	if cache != nil {
@@ -49,6 +49,10 @@ func (s *Service) GetSheetsData(sId string, rng string) []string {
 	r := parseResponse(response)
 
 	s.cache.Set(sId+rng, r)
+
+	go startPolling(s, sId, rng)
+
+	fmt.Println(r)
 
 	return r
 }
@@ -114,6 +118,26 @@ func parseResponse(r []sheets.RowData) []string {
 	return result
 }
 
-func startPolling(intervalInSec int) {
+func startPolling(s *Service, sId string, rng string) {
+	time.Sleep(10 * time.Second)
 
+	s.cache.SetPollingKey(sId + rng + "polling")
+
+	for _ = range time.Tick(time.Second * 10) {
+		if s.cache.Get(sId+rng+"polling") != nil {
+			fmt.Println("Polling")
+
+			d, err := sendGoogleSheetsRequest(sId, rng)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			s.cache.Set(sId+rng, parseResponse(d))
+		} else {
+			fmt.Println("Polling finished")
+
+			return
+		}
+	}
 }

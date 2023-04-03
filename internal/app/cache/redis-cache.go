@@ -63,3 +63,9 @@ func (c *RedisCache) Get(key string) []string {
 
 	return strings.Split(val, ",")
 }
+
+func (c *RedisCache) SetPollingKey(key string) {
+	hash := md5.Sum([]byte(key))
+
+	c.client.Set(hex.EncodeToString(hash[:]), fmt.Sprintln(time.Now()), time.Minute*1)
+}
