@@ -63,6 +63,26 @@ func (s *Service) InitCache() {
 	s.cache = cache.NewRedisCache("redis-google-sheets-db:"+os.Getenv("REDIS_PORT"), 0, 1)
 }
 
+func startPolling(s *Service, sId string, rng string) {
+	for _ = range time.Tick(time.Second * 10) {
+		if s.cache.Get(sId+rng+"polling") != nil {
+			fmt.Printf("Polling: | s_id: %s | range: %s | ttl: %s |\n", sId, rng, s.cache.Ttl(sId+rng+"polling"))
+
+			d, err := sendGoogleSheetsRequest(sId, rng)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			s.cache.Set(sId+rng, parseResponse(d))
+		} else {
+			fmt.Printf("Polling finished: | s_id: %s | range: %s |\n", sId, rng)
+
+			return
+		}
+	}
+}
+
 func sendGoogleSheetsRequest(sId string, rng string) ([]sheets.RowData, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", os.Getenv("GOOGLE_SHEETS_API_URL"), sId), nil)
 	if err != nil {
@@ -118,24 +138,4 @@ func parseResponse(r []sheets.RowData) []string {
 	}
 
 	return result
-}
-
-func startPolling(s *Service, sId string, rng string) {
-	for _ = range time.Tick(time.Second * 10) {
-		if s.cache.Get(sId+rng+"polling") != nil {
-			fmt.Printf("Polling: | s_id: %s | range: %s | ttl: %s |\n", sId, rng, s.cache.Ttl(sId+rng+"polling"))
-
-			d, err := sendGoogleSheetsRequest(sId, rng)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			s.cache.Set(sId+rng, parseResponse(d))
-		} else {
-			fmt.Printf("Polling finished: | s_id: %s | range: %s |\n", sId, rng)
-
-			return
-		}
-	}
 }

@@ -48,7 +48,7 @@ func ping(client *redis.Client) error {
 func (c *RedisCache) Set(key string, value []string) {
 	hash := md5.Sum([]byte(key))
 
-	c.client.Set(hex.EncodeToString(hash[:]), strings.Join(value, ","), time.Minute)
+	c.client.Set(hex.EncodeToString(hash[:]), strings.Join(value, "|"), time.Minute)
 }
 
 func (c *RedisCache) Get(key string) []string {
@@ -61,7 +61,7 @@ func (c *RedisCache) Get(key string) []string {
 		panic(err)
 	}
 
-	return strings.Split(val, ",")
+	return strings.Split(val, "|")
 }
 
 func (c *RedisCache) SetPollingKey(key string) {
