@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -47,8 +46,6 @@ func (s *Service) GetSheetsData(sId string, rng string) []string {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("Status code: 200 Ok")
 
 	r := parseResponse(response)
 
@@ -112,7 +109,12 @@ func sendGoogleSheetsRequest(sId string, rng string) ([]sheets.RowData, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(resp.Status)
+		var e []sheets.RowData
+
+		fmt.Printf("Error status: %s", err)
+		return e, nil
+	} else {
+		fmt.Println("Status code: 200 Ok")
 	}
 
 	googleSheetsResponse := &sheets.Response{}
