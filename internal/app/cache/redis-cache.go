@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -21,7 +20,6 @@ type RedisCache struct {
 func NewRedisCache(host string, db int, expires time.Duration) GoogleSheetsCache {
 	client := redis.NewClient(&redis.Options{
 		Addr:     host,
-		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       db,
 	})
 
